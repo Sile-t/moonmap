@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moon 3D Model in Space</title>
+    <style>
+        /* Add some basic styling to center the 3D canvas */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Hide the default scroll bars */
+            position: relative; /* Set the body to relative positioning */
+        }
+
+        /* Style the video element to cover the entire viewport */
+        video {
+            position: absolute; /* Set the video to absolute positioning */
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: -1; /* Place the video behind other content */
+        }
+    </style>
+</head>
+<body>
+    <!-- Background video -->
+    <video autoplay loop muted playsinline>
+        <source src="bg.mp4" type="video/mp4"> <!-- Replace with your space background video file -->
+    </video>
+
+    <!-- Include Three.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // Create a scene
+        const scene = new THREE.Scene();
+
+        // Create a camera
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 1.75;
+
+        // Create a WebGLRenderer
+        const renderer = new THREE.WebGLRenderer({alpha:true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000,0);
+        document.body.appendChild(renderer.domElement);
+
+        // Create a sphere
+        const geometry = new THREE.SphereGeometry(1, 128, 128);
+
+        // Load the image texture (moon surface) from a local file
+        const imageTextureLoader = new THREE.TextureLoader();
+        const imageTexture = imageTextureLoader.load('lroc_color_poles_8k.jpg'); // Replace with your local path
+
+        // Load the TIFF texture map (height map) from a local file
+        const tiffTextureLoader = new THREE.TextureLoader();
+        const tiffTexture = tiffTextureLoader.load('ldem_16_uint.tif'); // Replace with your local path
+
+        // Create material for the sphere using both textures
+        const material = new THREE.MeshBasicMaterial({
+            map: imageTexture, // Image texture
+            displacementMap: tiffTexture, // TIFF texture map
+            displacementScale: 10, // Adjust this value as needed for height mapping
+            transparent: false, // Make the material transparent
+            opacity: 1, // Set the opacity to 50%
+        });
+
+        const sphere = new THREE.Mesh(geometry, material);
+
+        // Add the sphere to the scene
+        scene.add(sphere);
+
+        // Create directional light
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(1, 1, 100); // Position the light source
+        scene.add(directionalLight);
+
+        // Variables for mouse-based rotation controls
+        let isDragging = false;
+        let previousMouseX = 0;
+        let previousMouseY = 0;
+
+        // Handle zooming using the mouse wheel
+        document.addEventListener("wheel", (e) => {
+            camera.position.z += e.deltaY * 0.001;
+            camera.position.z = Math.max(1, camera.position.z); // Limit zoom-out distance
+        });
+
+        // Handle mouse button press and release
+        document.addEventListener("mousedown", (e) => {
+            if (e.button === 0) {
+                // Left mouse button
+                isDragging = true;
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
+              
+            }
+        });
+
+        document.addEventListener("mouseup", () => {
+            isDragging = false;
+        });
+
+        // Handle mouse movement for rotation
+        document.addEventListener("mousemove", (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - previousMouseX;
+                const deltaY = e.clientY - previousMouseY;
+                sphere.rotation.y += deltaX * 0.01;
+                sphere.rotation.x += deltaY * 0.01;
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
+            }
+        });
+
+        // Render the scene with the camera
+        const animate = () => {
+            requestAnimationFrame(animate);
+
+            // Rotate the sphere
+            sphere.rotation.x += 0.00;
+            sphere.rotation.y += 0.001;
+            renderer.render(scene, camera);
+        };
+
+        animate();
+    </script>
+</body>
+</html>
